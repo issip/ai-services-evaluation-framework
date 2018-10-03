@@ -1,0 +1,662 @@
+<!DOCTYPE HTML>
+<html data-ng-app="issipApp">
+	<head>
+    <% include head %>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-slider/9.2.0/bootstrap-slider.js"></script>
+		<script src='bower_components/pdfmake/build/pdfmake.min.js'></script>
+ 		<script src='bower_components/pdfmake/build/vfs_fonts.js'></script>
+		<script>
+		$(document).ready(function() {
+
+		 var clearBody = function() {
+			 $("#div-report").hide();
+ 			 $("#reports tbody").empty();
+ 			 $("#status").empty();
+ 		};
+
+		// Initalize implementation
+		var init = function() {
+			clearBody();
+			// $("#servicesCB").val("SA");
+			$("#btn-export-report").prop('disabled', true);
+		};
+
+		$("#servicesCB").change(function() {
+			clearBody();
+		});
+
+		<!-- Upload button implementation -->
+		$("#uploadButton").click(function() {
+			clearBody();
+		 	var selection = $("#servicesCB").val();
+			if (selection == "SA") {
+				$('#modal-1').modal('show');
+			} else if (selection == "ST"){
+				$('#modal-2').modal('show');
+			}
+		});
+
+		$('#uploadForm-SA').submit(function(event) {
+			event.preventDefault();
+			console.log("event is ", event);
+		 	$('#modal-1').modal('hide');
+		 	$("#status").empty().text("Uploading Test Data...");
+			var file = $('#sampleFile').val();
+	 		console.log("file is ", file);
+		 	$.ajax({
+				type: "POST",
+				url: "/importDSSentiment",
+				data: {sampleFile:file},
+				 error: function(xhr) {
+						 console.log('Error: ' + xhr.status);
+						 $("#status").empty().text("Upload Failed!");
+				 },
+				 success: function(response) {
+					 console.log('success: ');
+						 $("#status").empty().text("Upload Test Data Successful!");
+				 }
+			 });
+ 		});
+
+		$('#uploadForm-ST').submit(function(event) {
+			event.preventDefault();
+	 		$('#modal-2').modal('hide');
+	 		$("#status-ST").empty().text("Uploading Test Data...");
+			var file = $('#sampleFile_ST').val();
+	 		console.log("file is ", file);
+
+	 		$.ajax({
+				type: "POST",
+				url: "/importDSSTT",
+				data: {sampleFile_ST:file},
+			 	error: function(xhr) {
+					 console.log('Error: ' + xhr.status);
+					 $("#status-ST").empty().text("Upload Failed!");
+			 },
+			 success: function(response) {
+				 	console.log('success: ');
+					$("#status").empty().text("Upload Test Data Successful!");
+			 }
+		 	});
+		});
+		<!-- end of Upload implementation -->
+
+		<!-- Analyze button implementation -->
+		$("#analyzeButton").click(function() {
+	 		clearBody();
+	 		$("#status").empty().text("Analyzing Datasets...");
+	 		var selection = $("#servicesCB").val();
+	 		var url = "";
+	 		if (selection == "SA") {
+		 		url = "/analyzeDSSentiment";
+	 		} else if (selection == "ST") {
+		 		url = "/analyzeDSSTT";
+	 		}
+	 		console.log("url in analyze button is ", url);
+									 $.ajax({
+													 type: "POST",
+													 url: url,
+													 data: {},
+													 cache: false,
+													 complete: function(response){
+														 $("#status").empty().text("Analyzed successfully!");
+													 }
+									 });
+			});// end of Analyze button implementation
+
+			//Initialize all controls
+			init();
+
+			<!-- View Reports implementation -->
+			$("#btn-view-reports").click(function() {
+				clearBody();
+				$("#reports tbody").remove();
+				var selection = $("#servicesCB").val();
+				var url;
+				if (selection == "SA") {
+		 			url = "/getDSReport";
+				} else if (selection == "ST"){
+		 			url = "/getDSSTTReport";
+				}
+
+				var getResultTable_SA = function(result) {
+					var row_markup = '<td class="expand" colspan="3">';
+					row_markup += '<table class="table table1">';
+					row_markup += '<thead><tr><th></th><th>vendor</th><th>precision</th><th>accuracy</th></tr></thead>';
+					row_markup += '<tbody>';
+					for (var i = 0; i < result.length; i++) {
+						var result_i = result[i];
+						if (i == result.length - 1) {
+							var date_analyzed = result_i.date_analyzed;
+							$('#date_analyzed').text("Test Data Analyzed on : " + date_analyzed);
+						}
+						for (var j = 0; j < result_i.vendor_result.length; j++) {
+							row_markup += '<tr>';
+							if (j == 0) {
+								row_markup += '<td rowSpan="2">' + result_i.dataset +'</td>'; //,should be replaced with Dataset name
+							}
+							row_markup += '<td>' + result_i.vendor_result[j].vendor +'</td>'; //,should be replaced with Vendor name
+							row_markup += '<td>' + result_i.vendor_result[j].precision +'</td>'; //,should be replaced with Precision
+							row_markup += '<td>' + result_i.vendor_result[j].accuracy +'</td>'; //,should be replaced with Precision
+							row_markup += '</tr>';
+						}
+					}
+					row_markup += '</tbody>';
+					row_markup += '</table>';
+					row_markup += '</td>';
+					return row_markup;
+				}
+
+				var getResultTable_STT = function(result) {
+					var row_markup = '<td class="expand" colspan="2">';
+					row_markup += '<table class="table table1">';
+					row_markup += '<thead><tr><th></th><th>vendor</th><th>WER</th></tr></thead>';
+					row_markup += '<tbody>';
+					for (var i = 0; i < result.length; i++) {
+						var result_i = result[i];
+						if (i == result.length - 1) {
+							var date_analyzed = result_i.date_analyzed;
+							$('#date_analyzed').text("Test Data Analyzed on : " + date_analyzed);
+						}
+						for (var j = 0; j < result_i.vendor_result.length; j++) {
+							row_markup += '<tr>';
+							if (j == 0) {
+								row_markup += '<td rowSpan="2">' + result_i.dataset +'</td>'; //,should be replaced with Dataset name
+							}
+							row_markup += '<td>' + result_i.vendor_result[j].vendor +'</td>'; //,should be replaced with Vendor name
+							row_markup += '<td>' + result_i.vendor_result[j].WER +'</td>'; //,should be replaced with WER
+							row_markup += '</tr>';
+						}
+					}
+					row_markup += '</tbody>';
+					row_markup += '</table>';
+					row_markup += '</td>';
+					return row_markup;
+				}
+
+				$("#reports").append("<tbody></tbody>");
+															$.ajax({
+																type: "POST",
+																url: url,
+																data: {startDate:1, endDate:1},
+																cache: false,
+																success: function(data){
+																			 console.log("GOT RECORDS:", data);
+																			 var date_analyzed;
+																			 var record = data;
+																			 console.log("result is ", record);
+																			 var row_markup = '<tr>';
+																			 row_markup += '<td>'+ record.metadata.service +'</td>'; //,should be replaced with service Name
+																			 row_markup += '<td>'+ record.metadata.feature +'</td>'; //,should be replaced with feature Name
+																			 row_markup += '<td>'+ '<b>' + record.metadata.version[0].vendor + '</b>' + ": "  + record.metadata.version[0].version + " (" + record.metadata.version[0].release_date + ")" + '</br>'; //,should be replaced with Release Date
+																			 row_markup += '<b>' + record.metadata.version[1].vendor + '</b>' + ": "  + record.metadata.version[1].version + " (" + record.metadata.version[1].release_date + ")" +'</td>'; //,should be replaced with Release Date
+																			 row_markup += '<td>'+ record.metadata.language +'</td>'; //,should be replaced with language
+
+																			 if (selection == "SA") {
+																					 row_markup += getResultTable_SA(record.result);
+																			 } else if (selection == "ST"){
+																					 row_markup += getResultTable_STT(record.result);
+																			 }
+
+																			 row_markup += '</tr>';
+																			 $('#reports tbody').append(row_markup);
+																			 // date_analyzed is now set in getResultTable_SA/STT function
+																			 // $('#date_analyzed').text("Test Data Analyzed on : " + date_analyzed);
+																			 $("#div-report").show();
+																			 $("#btn-export-report").prop('disabled', false);
+																}
+															});
+  		});//// end of view reports implementation
+
+		<!-- Export button implementation -->
+		$("#btn-export-report").click(function() {
+				var selection = $("#servicesCB").val();
+				var url;
+				if (selection == "SA") {
+		 			export_report_SA();
+				} else if (selection == "ST"){
+		 			export_report_ST();
+				}
+		 });
+
+		 var export_report_ST = function() {
+				var getTextForCell = function(row, col) {
+					var nested_table = $('#reports tr').eq(2).find('td').eq(4);
+					var nested_table_body = nested_table.children().children();
+					return nested_table_body.find('tr').eq(row).find('td').eq(col).html();
+				}
+
+				var removeTags = function(html) {
+					return html.replace(/<(.|\n)*?>/g, '');
+				}
+				var nested_table = $('#reports tr').eq(2).find('td').eq(4);
+				var nested_table_body = nested_table.children().children();
+
+				var getRows = function() {
+					var markup = '['
+					+ '\''
+					+ '\''
+					+ ','
+					+ "'Vendor'"
+					+ ','
+					+ "'Precision'"
+					+ ','
+					+  "'Accuracy'"
+					+ ']'
+					+ ','
+					+	'['
+					+ '{'
+					+			'rowSpan: 2, text: getTextForCell(1, 0)'
+					+		'},'
+					+		'{'
+					+			'text: getTextForCell(1, 1)'
+					+		'},'
+					+		'{'
+					+		 'text: getTextForCell(1, 2)'
+					+		'},'
+					+		'{'
+					+		'text: getTextForCell(1, 3)'
+					+		'}'
+					+	'],'
+					+ '['
+					+		'{'
+					+		'	text:'
+					+		'},'
+					+		'{'
+					+		'	text: getTextForCell(2, 0)'
+					+		'},'
+					+		'{'
+					+		'	text: getTextForCell(2, 1)'
+					+		'},'
+					+		'{'
+					+		'	text: getTextForCell(2, 2)'
+					+		'}'
+					+ '],';
+					return markup;
+				}
+
+				var docDefinition = {
+														pageOrientation: 'landscape',
+														content: [
+																			{ text: 'ISSIP Comparison Report', style: 'header'},
+																			{ text: $('#date_analyzed').text(), style: 'header1'},
+																			//table starts
+																			{
+																				style: 'tableExample',
+																				table: {
+																					body: [
+																						['Service', 'Feature', 'Version', 'Language', 'Result'], //header
+																						[
+																							{
+																								text: $('#reports tr').eq(2).find('td').eq(0).html() //service
+																							},
+
+																							{
+																								text: $('#reports tr').eq(2).find('td').eq(1).html() //feature
+																							},
+
+																							{
+																								text: removeTags($('#reports tr').eq(2).find('td').eq(2).html()) //version
+																							},
+
+																							{
+																								text: $('#reports tr').eq(2).find('td').eq(3).html()	//language
+																							},
+																							[
+																								{
+																									table: {
+																										body: [
+																											['', 'Vendor', 'WER'],
+																											[
+																													{
+																														rowSpan: 2, text: getTextForCell(1, 0) //dataset name
+																													},
+																													{
+																														text: getTextForCell(1, 1)
+																													},
+																													{
+																														text: getTextForCell(1, 2)
+																													},
+																											],
+																											[
+																													{
+																														text: ''
+																													},
+																													{
+																														text: getTextForCell(2, 0)
+																													},
+																													{
+																														text: getTextForCell(2, 1)
+																													},
+																											],
+																											[
+																													{
+																														rowSpan: 2, text: getTextForCell(3, 0) //dataset name
+																													},
+																													{
+																														text: getTextForCell(3, 1)
+																													},
+																													{
+																														text: getTextForCell(3, 2)
+																													},
+																											],
+																											[
+																													{
+																														text: ''
+																													},
+																													{
+																														text: getTextForCell(4, 0)
+																													},
+																													{
+																														text: getTextForCell(4, 1)
+																													},
+																											],
+																										]
+																									},//inner table
+																								}
+																							],
+																						]
+																					]
+																				}
+																			}, //table ends
+
+														],
+														styles: {
+															header: {
+																fontSize: 22,
+																bold: true,
+																alignment: 'center',
+																margin: [0, 0, 0, 10]
+															},
+															header1: {
+																fontSize: 15,
+																alignment: 'center',
+																margin: [0, 0, 0, 10]
+															},
+														}
+
+										};
+			pdfMake.createPdf(docDefinition).open();
+		};// end of export_report_SA implementation
+
+		 var export_report_SA = function() {
+				var getTextForCell = function(row, col) {
+					var nested_table = $('#reports tr').eq(2).find('td').eq(4);
+					var nested_table_body = nested_table.children().children();
+					return nested_table_body.find('tr').eq(row).find('td').eq(col).html();
+				}
+
+				var removeTags = function(html) {
+					return html.replace(/<(.|\n)*?>/g, '');
+				}
+				var nested_table = $('#reports tr').eq(2).find('td').eq(4);
+				var nested_table_body = nested_table.children().children();
+
+				var getRows = function() {
+					return "["
+					+ "{"
+					+			"rowSpan: 2, text: getTextForCell(1, 0)"
+					+		"},"
+					+		"{"
+					+			"text: getTextForCell(1, 1)"
+					+		"},"
+					+		"{"
+					+		 "text: getTextForCell(1, 2)"
+					+		"},"
+					+		"{"
+					+		"text: getTextForCell(1, 3)"
+					+		"}"
+					+	"],"
+					+ "["
+					+		"{"
+					+		"	text:"
+					+		"},"
+					+		"{"
+					+		"	text: getTextForCell(2, 0)"
+					+		"},"
+					+		"{"
+					+		"	text: getTextForCell(2, 1)"
+					+		"},"
+					+		"{"
+					+		"	text: getTextForCell(2, 2)"
+					+		"}"
+					+ "],";
+				}
+
+				var docDefinition = {
+														pageOrientation: 'landscape',
+														content: [
+																			{ text: 'ISSIP Comparison Report', style: 'header'},
+																			{ text: $('#date_analyzed').text(), style: 'header1'},
+																			//table starts
+																			{
+																				style: 'tableExample',
+																				table: {
+																					body: [
+																						['Service', 'Feature', 'Version', 'Language', 'Result'], //header
+																						[
+																							{
+																								text: $('#reports tr').eq(2).find('td').eq(0).html() //service
+																							},
+
+																							{
+																								text: $('#reports tr').eq(2).find('td').eq(1).html() //feature
+																							},
+
+																							{
+																								text: removeTags($('#reports tr').eq(2).find('td').eq(2).html()) //version
+																							},
+
+																							{
+																								text: $('#reports tr').eq(2).find('td').eq(3).html()	//language
+																							},
+																							[
+																								{
+																									table: {
+																										body: [
+																											['', 'Vendor', 'Precision', 'Accuracy'],
+																											[
+																													{
+																														rowSpan: 2, text: getTextForCell(1, 0) //dataset name
+																													},
+																													{
+																														text: getTextForCell(1, 1)
+																													},
+																													{
+																														text: getTextForCell(1, 2)
+																													},
+																													{
+																														text: getTextForCell(1, 3)
+																													}
+																											],
+																											[
+																													{
+																														text: ''
+																													},
+																													{
+																														text: getTextForCell(2, 0)
+																													},
+																													{
+																														text: getTextForCell(2, 1)
+																													},
+																													{
+																														text: getTextForCell(2, 2)
+																													}
+																											],
+																											[
+																													{
+																														rowSpan: 2, text: getTextForCell(3, 0) //dataset name
+																													},
+																													{
+																														text: getTextForCell(3, 1)
+																													},
+																													{
+																														text: getTextForCell(3, 2)
+																													},
+																													{
+																														text: getTextForCell(3, 3)
+																													}
+																											],
+																											[
+																													{
+																														text: ''
+																													},
+																													{
+																														text: getTextForCell(4, 0)
+																													},
+																													{
+																														text: getTextForCell(4, 1)
+																													},
+																													{
+																														text: getTextForCell(4, 2)
+																													}
+																											],
+																										]
+																									},
+																								}
+																							],
+																						]
+																					]
+																				}
+																			}, //table ends
+
+														],
+														styles: {
+															header: {
+																fontSize: 22,
+																bold: true,
+																alignment: 'center',
+																margin: [0, 0, 0, 10]
+															},
+															header1: {
+																fontSize: 15,
+																alignment: 'center',
+																margin: [0, 0, 0, 10]
+															},
+														}
+
+													};
+			pdfMake.createPdf(docDefinition).open();
+			// pdfMake.createPdf(docDefinition).download('issip-report.pdf');
+		};// end of export button implementation
+
+	});// end of document.ready function
+	</script>
+	</head>
+	<!-- END PAGE HEADER -->
+
+	<!-- PAGE BODY / BUTTONS and REPORTS -->
+	<body ng-cloak>
+		<div class="container-fluid" id="main"> <!-- ALL CONTENT BELOW IS IN THE CONTAINER -->
+			<% include shared %> <!-- ADDS HEADERBAR AND SIDENAV -->
+			<div class="header-block">
+        <div class="header-content">
+					<div class="row">
+						<div class="col-sm-12">
+							<h1>Working with Test Data and Reports</h1>
+	            <br/>
+						</div>
+					</div>
+
+					<!-- modal dialog to upload sentiment analysis test data -->
+					<div class="modal" id="modal-1">
+						<div class="modal-dialog">
+							<div class="modal-content">
+								<form ref='uploadForm' id='uploadForm-SA' name='uploadForm' action='/importDSSentiment' method='post' encType="multipart/form-data">
+								<div class="modal-body">
+									<input class="file-input" type="file" style="width:500px" id="sampleFile" name="sampleFile"/>
+									<br><br>
+									<p>Choose a csv file with test data to upload.</br>It should have the format: text, SME assessed value.</p>
+								</div>
+
+								<div class="modal-footer">
+									<input type='submit' class="btn btn-default btn-modal" value='Upload' />
+									<button type="button" class="btn btn-default btn-modal btn-cancel" data-dismiss="modal">Cancel</button>
+								</div>
+								</form>
+							</div>
+						</div>
+					</div>
+
+						<!-- modal dialog to upload speect to text test data -->
+					<div class="modal" id="modal-2">
+            <div class="modal-dialog">
+              <div class="modal-content">
+								<form ref='uploadForm' id='uploadForm-ST' name='uploadForm' action='/importDSSTT' method='post' encType="multipart/form-data">
+								<div class="modal-body">
+									<input class="file-input" type="file" style="width:500px" id="sampleFile_ST" name="sampleFile_ST"/>
+									<br><br>
+									<p>Choose a csv file with test data to upload.</br>It should have the format: .wav file name, SME assessed text.</p>
+								</div>
+
+								<div class="modal-footer">
+									<input type='submit' class="btn btn-default btn-modal" value='Upload' />
+	                <button type="button" class="btn btn-default btn-modal btn-cancel" data-dismiss="modal">Cancel</button>
+                </div>
+								</form>
+              </div>
+            </div>
+          </div>
+
+					<div id="div-service1">
+						<label class="label">Choose the AI service to work with: </label>
+						<select type="combobox" id="servicesCB">
+							<option value="SA">Sentiment Analysis</option>
+							<option value="ST">Speech to Text</option>
+						</select>
+						<br/>
+					</div>
+
+					<div id="div-report-btns" class="row">
+						<!-- <form method="post"> -->
+							<div class="form-group col-sm-3"> <!-- Upload Button -->
+		 						<button type="button" id="uploadButton" class="btn btn-labeled btn-default btn-header btn-search" data-toggle="modal" data-target="#run">
+		 							<span class="btn-label" data-toggle="modal" data-target="#modal-1">Upload Test Data</span>
+		 						</button>
+		 					</div>
+							<div class="form-group col-sm-3"> <!-- Analyze Button -->
+		 						<button type="button" id="analyzeButton" class="btn btn-labeled btn-default btn-header btn-search">
+		 							<span class="btn-label">Analyze Test Data</span></button>
+		 					</div>
+              <div class="form-group col-sm-3"> <!-- Submit button -->
+								<button type="button" id="btn-view-reports" class="btn btn-labeled btn-default btn-header btn-search">
+                  <span class="btn-label">View Report</span></button>
+              </div>
+							<div class="form-group col-sm-3"> <!-- Export button -->
+								<button type="button" id="btn-export-report" class="btn btn-labeled btn-default btn-header btn-search">
+                  <span class="btn-label">Export Report</span></button>
+              </div>
+							<span id="status" style="color:gray;font-size:200%;font-weight:bold;display:table;margin:auto"></span>
+            <!-- </form> -->
+					</div>
+			</div>
+		</div>
+
+    <div id="div-report" class="body-content-reports">
+				<div>
+						<label id="date_analyzed" class="control-label" style="text-align:center">Test Data Analyzed on : </label>
+				</div>
+        <table id="reports" class="table">
+          <thead>
+							<tr><th colspan="4">SERVICE METADATA</th><th colspan="3">RESULTS</th></tr>
+							<tr><th>SERVICE</th><th>FEATURE</th><th>VERSION</th><th>LANGUAGE</th><th colspan="3">RESULT</th></tr>
+					</thead>
+          <tbody>
+              <tr id="reportCard">
+                  <td>< SERVICE ></td>
+                  <td>< FEATURE ></td>
+                  <td>< VERSION ></td>
+                  <td>< LANGUAGE ></td>
+                  <td colspan="3">< RESULT ></td>
+              </tr>
+          </tbody>
+          </table>
+        </div>
+      </div>
+		<% include footer %> <!-- ADDS REQUIRED JAVASCRIPT TO THE BASE OF <BODY> -->
+
+	</body>
+	<script type="text/javascript" src="bundle.js"></script>
+	<script>
+	</script>
+</html>

@@ -1,0 +1,123 @@
+<!DOCTYPE HTML>
+<html data-ng-app="issipApp">
+	<head>
+    <% include head %>
+		<script src="http://malsup.github.com/jquery.form.js"></script>
+
+		<script>
+		var init = function() {
+			$("#GTCB").val("positive");
+			$("#testText").val("I went and saw this movie last night after being coaxed to by a few friends of mine. I'll admit that I was reluctant to see it because from what I knew of Ashton Kutcher he was only able to do comedy. I was wrong. Kutcher played the character of Jake Fischer very well, and Kevin Costner played Ben Randall with such professionalism. The sign of a good movie is that it can toy with our emotions. This one did exactly that. The entire theater (which was sold out) was overcome by laughter during the first half of the movie, and were moved to tears during the second half. While exiting the theater I not only saw many women in tears, but many full grown men as well, trying desperately not to let anyone see them crying. This movie was great, and I suggest that you go see it before you judge.");
+			clearBody_SA();
+		};
+
+		var clearBody_SA = function() {
+			$("#resultTable").hide();
+			$("#resultTable tbody").empty();
+			$("#status").empty();
+		};
+
+		$(document).ready(function() {
+		 init();
+
+		 $("#compareButton").click(function() {
+			  $("#resultTable tbody").empty();
+				var textInput = $("#testText").val();
+				var groundTruth = $("#GTCB").val();
+				console.log("input is ", textInput, "groundTruth ", groundTruth);
+				$("#status").empty().text("Analyzing & Comparing...");
+												$.ajax({
+																type: "POST",
+																url: "/analyzeSentimentNoDB",
+																data: {textInput:textInput, groundTruth:groundTruth},
+																cache: false,
+																complete: function(response){
+																	$("#status").empty().text("Operation successful!");
+																	console.log("GOT RECORDS:",response.responseJSON);
+																	var row_markup = '<tr><td></td><td></td><td></td></tr>';
+																	var record = response.responseJSON;
+																	for (i=0; i<record.length; i++) {
+																		console.log(record[i].vendor, record[i].result);
+																		var row_markup = '<tr>';
+																		row_markup += '<td>'+ record[i].vendor +'</td>'; //,VENDOR
+																		row_markup += '<td>'+ record[i].result.sentiment_label +'</td>'; //,should be replaced with label
+																		row_markup += '<td>'+ record[i].result.score +'</td>'; //,should be replaced with score
+																		row_markup += '<td>'+ record[i].accuracy +'</td>'; //,should be replaced with ACCURACY
+																		row_markup += '</tr>';
+																		$('#resultTable tbody').append(row_markup);
+																	}
+																	$("#resultTable").show();
+																}
+									 			});
+
+		});
+
+	 //Very important line, it disable the page refresh.
+	 return false;
+	 });
+	 </script>
+	</head>
+
+	<body ng-cloak>
+		<div class="container-fluid" id="main"> <!-- ALL CONTENT BELOW IS IN THE CONTAINER -->
+			<% include shared %> <!-- ADDS HEADERBAR AND SIDENAV -->
+			<div class="header-block">
+          <div class="header-content">
+            <div class="row">
+              <div class="col-sm-10">
+                <h1>Dashboard</h1>
+                <p class="header-text">
+                  Welcome ISSIP User!<br />
+                  What would you like to do today?
+                </p>
+              </div>
+						</div>
+					</div>
+				</div>
+        <!-- END PAGE HEADER -->
+
+        <!-- START PAGE BODY / DASHBOARD -->
+			 <div id="div-SA" class="body-content">
+ 					<div class="col-sm-10">
+ 						<label class="label">Enter sample text: </label>
+ 						<br/>
+ 						<textarea class="textbox" rows=10 id="testText">
+							"I went and saw this movie last night after being coaxed to by a few friends of mine. I'll admit that I was reluctant to see it because from what I knew of Ashton Kutcher he was only able to do comedy. I was wrong. Kutcher played the character of Jake Fischer very well, and Kevin Costner played Ben Randall with such professionalism. The sign of a good movie is that it can toy with our emotions. This one did exactly that. The entire theater (which was sold out) was overcome by laughter during the first half of the movie, and were moved to tears during the second half. While exiting the theater I not only saw many women in tears, but many full grown men as well, trying desperately not to let anyone see them crying. This movie was great, and I suggest that you go see it before you judge."
+						</textarea>
+ 					</div>
+					<!--<div class="col-sm-2">
+ 						<button type="button" id="resetButton" class="btn">
+ 							<span class="btn-label">Reset Text area</span></button>
+ 					</div>-->
+					<div class="col-sm-10">
+						<label class="label">Select the sentiment for sample text: </label>
+						<select type="combobox" id="GTCB">
+							<option value="positive">Positive</option>
+							<option value="negative">Negative</option>
+						</select>
+					</div>
+
+ 					<div class="col-sm-5">
+ 						<button type="button" id="compareButton" class="btn btn-labeled btn-default btn-header btn-dashboard">
+ 							<span class="btn-label">Analyze & Compare Text</span></button>
+ 					</div>
+					<div class="span-status col-sm-10">
+						<span id="status" style="color:gray;font-size:200%;font-weight:bold;display:table;margin:auto;padding:10px,10px;"></span>
+					</div>
+			</div>
+
+			<div class="table-content">
+				 <table id="resultTable" class="table" style="display:none">
+				  <thead><tr><th> VENDOR </th><th> LABEL </th><th> SCORE </th><th> ACCURACY </th></tr></thead>
+					<tbody></tbody>
+				</table>
+			</div>
+		</div>
+
+        <!-- END PAGE BODY / DASHBOARD -->
+		<% include footer %> <!-- ADDS REQUIRED JAVASCRIPT TO THE BASE OF <BODY> -->
+	</body>
+	<script>
+	</script>
+	<script type="text/javascript" src="bundle.js"></script>
+</html>
