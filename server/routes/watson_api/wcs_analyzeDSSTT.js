@@ -2,8 +2,8 @@
 const SpeechToTextV1 = require('watson-developer-cloud/speech-to-text/v1');
 // Imports the Google Cloud client library
 const speech = require('@google-cloud/speech');
-const username = process.env.IBM_SPEECH_TEXT_USERNAME2;
-const password = process.env.IBM_SPEECH_TEXT_PASSWORD2;
+const username = process.env.IBM_SPEECH_TEXT_USERNAME;
+const password = process.env.IBM_SPEECH_TEXT_PASSWORD;
 const cloudant = require('../../custom_modules/cloudant/cloudantWrapper');
 const cloudantInsert = require('../../custom_modules/cloudant/cloudantInsert');
 const db_ibm_results = cloudant.db.use(process.env.CLOUDANT_DBNAME_ISSIP_IBM_RESULTS_STT);
