@@ -1,0 +1,13 @@
+{
+  "name": "require-component",
+  "repo": "CamShaft/require-component",
+  "description": "Require component and npm modules",
+  "version": "0.1.0",
+  "keywords": [],
+  "dependencies": {},
+  "development": {},
+  "license": "MIT",
+  "scripts": [
+    "index.js"
+  ]
+}
