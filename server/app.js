@@ -15,6 +15,7 @@ const app = express();
 const routes = require('./routes/index');
 const reports = require('./routes/reports');
 const analysis = require('./routes/analysis');
+const admin = require('./routes/admin');
 
 //app.set('GOOGLE_APPLICATION_CREDENTIALS', envs('google-cred.json')); //uncomment if google-cred.json has valid google credentials
 app.use(requireHTTPS) //force https only policy
@@ -42,6 +43,7 @@ if(process.env.HOST_ENV === 'local'){
 	app.use('/', routes);
 	app.use('/reports', reports);
 	app.use('/analysis', analysis);
+	app.use('/admin', admin);
 }else{
 	app.use('/', passport.authenticate('basic',{session:false}), routes);
 	app.use('/reports', passport.authenticate('basic',{session:false}), reports);

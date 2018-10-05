@@ -19,4 +19,6 @@ routes.post('/getDSSTTReport',require('./watson_api/wcs_getDSSTTReport'));
 routes.post('/importDSSTT',require('./watson_api/wcs_importDSSTT.js'));
 routes.post('/analyzeDSSTT',require('./watson_api/wcs_analyzeDSSTT.js'));
 
+routes.post('/dbSetup',require('./watson_api/db_setup.js'));
+
 module.exports = routes;

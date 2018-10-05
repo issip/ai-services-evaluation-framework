@@ -1,0 +1,59 @@
+<!DOCTYPE HTML>
+<html data-ng-app="issipApp">
+	<head>
+    <% include head %>
+		<script src="http://malsup.github.com/jquery.form.js"></script>
+
+		<script>
+		$(document).ready(function() {
+
+		 $("#createDB").click(function() {
+												$.ajax({
+																type: "POST",
+																url: "/dbSetup",
+																data: {},
+																cache: false,
+																complete: function(response){
+																	console.log("db setup complete")
+																}
+									 			});
+
+		});
+
+	 //Very important line, it disable the page refresh.
+	 return false;
+	 });
+	 </script>
+	</head>
+
+	<body ng-cloak>
+		<div class="container-fluid" id="main"> <!-- ALL CONTENT BELOW IS IN THE CONTAINER -->
+			<% include shared %> <!-- ADDS HEADERBAR AND SIDENAV -->
+			<div class="header-block">
+          <div class="header-content">
+            <div class="row">
+              <div class="col-sm-10">
+                <h1>Admin Dashboard</h1>
+								<p class="header-text">
+								 Create and configure the required Cloudant Databases
+							  </p>
+              </div>
+						</div>
+					</div>
+				</div>
+        <!-- END PAGE HEADER -->
+
+        <!-- START PAGE BODY / DASHBOARD -->
+			 <div id="div-SA" class="body-content">
+					<div class="col-sm-5">
+						<button type="button" id="createDB" class="btn btn-labeled btn-default btn-header btn-dashboard">
+ 							<span class="btn-label">Create & Configure Cloudant DB</span></button>
+					</div>
+			</div>
+        <!-- END PAGE BODY / DASHBOARD -->
+		<% include footer %> <!-- ADDS REQUIRED JAVASCRIPT TO THE BASE OF <BODY> -->
+	</body>
+	<script>
+	</script>
+	<script type="text/javascript" src="bundle.js"></script>
+</html>
